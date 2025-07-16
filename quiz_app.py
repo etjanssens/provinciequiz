@@ -21,47 +21,43 @@ def load_data():
 
 df = load_data()
 
-# Initialiseer score en vraag
+# Initialiseer state
 if "score" not in st.session_state:
     st.session_state.score = {"goed": 0, "totaal": 0}
-if "vraag" not in st.session_state or st.session_state.get("nieuwe_vraag", True):
+if "vraag" not in st.session_state:
     st.session_state.vraag = df.sample(1).iloc[0]
     st.session_state.feedback = ""
-    st.session_state.nieuwe_vraag = False
-    st.session_state.antwoordveld = ""  # Reset invoerveld
+    st.session_state.antwoordveld = ""
 
 plaats = st.session_state.vraag["woonplaats"]
-provincie_juist = st.session_state.vraag["provincie"]
-juiste_antwoord = provincie_juist.strip().lower()
+provincie_juist = st.session_state.vraag["provincie"].strip().lower()
 
 st.markdown(f"📍 **In welke provincie ligt de plaats _{plaats}_?**")
 
-# Invoerveld
-antwoord = st.text_input("Typ hier de provincie:", key="antwoordveld").strip().lower()
+antwoord = st.text_input("Typ hier de provincie:", value=st.session_state.antwoordveld, key="antwoordveld").strip().lower()
 
-# Lijst van alle provincienamen
+# Controle: alleen als invoer een volledige provincienaam is
 alle_provincies = [p.lower() for p in df["provincie"].unique()]
-
-# Automatisch controleren zodra de invoer een volledige provincienaam is
-if antwoord:
-    if antwoord == juiste_antwoord:
+if antwoord in alle_provincies:
+    if antwoord == provincie_juist:
         st.session_state.score["goed"] += 1
         st.session_state.score["totaal"] += 1
-        st.session_state.feedback = "✅ Goed geraden!"
-        st.session_state.nieuwe_vraag = True
-        st.rerun()
-    elif antwoord in alle_provincies:
-        st.session_state.score["totaal"] += 1
-        st.session_state.feedback = f"❌ Fout! Het juiste antwoord is: **{provincie_juist}**"
-        st.session_state.nieuwe_vraag = True
-        st.rerun()
-
-# Toon feedback + score
-if st.session_state.feedback:
-    if st.session_state.feedback.startswith("✅"):
-        st.success(st.session_state.feedback)
+        st.success("✅ Goed geraden!")
     else:
-        st.error(st.session_state.feedback)
+        st.session_state.score["totaal"] += 1
+        st.error(f"❌ Fout! Het juiste antwoord is: **{st.session_state.vraag['provincie']}**")
 
     percentage = (st.session_state.score["goed"] / st.session_state.score["totaal"]) * 100
     st.info(f"🎯 Je hebt {st.session_state.score['goed']} van {st.session_state.score['totaal']} goed ({percentage:.1f}%)")
+
+    # Nieuwe vraag klaarzetten
+    st.session_state.vraag = df.sample(1).iloc[0]
+    st.session_state.antwoordveld = ""
+    st.stop()  # Zorgt voor refresh met nieuwe vraag
+
+# Opnieuw beginnen knop
+if st.button("🔁 Opnieuw beginnen"):
+    st.session_state.score = {"goed": 0, "totaal": 0}
+    st.session_state.vraag = df.sample(1).iloc[0]
+    st.session_state.antwoordveld = ""
+    st.rerun()
