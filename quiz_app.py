@@ -1,7 +1,7 @@
+
 import streamlit as st
 import pandas as pd
 import random
-import time
 
 st.title("🧠 Raad de provincie bij de plaats!")
 
@@ -9,65 +9,62 @@ st.title("🧠 Raad de provincie bij de plaats!")
 def load_data():
     df = pd.read_csv("woonplaatsen.csv")
     df = df[["Regio's", "Provincie Naam (Naam)"]].dropna()
-    df = df.sample(frac=1).reset_index(drop=True)
     return df
 
 df = load_data()
 
-# Initieer sessiestatus
-for key, default in {
-    "totaal": 0,
-    "goed": 0,
-    "current_row_index": 0,
-    "feedback": "",
-    "input_disabled": False,
-    "antwoord": "",
-    "trigger_next": False,
-}.items():
-    if key not in st.session_state:
-        st.session_state[key] = default
+# Initialiseer sessiestatus
+if "score" not in st.session_state:
+    st.session_state.score = {"goed": 0, "totaal": 0}
+if "vraag" not in st.session_state:
+    st.session_state.vraag = df.sample(1).iloc[0]
+if "feedback" not in st.session_state:
+    st.session_state.feedback = None
+if "show_new_question" not in st.session_state:
+    st.session_state.show_new_question = False
 
-# Huidige vraag
-index = st.session_state.current_row_index
-rij = df.iloc[index]
-plaats = rij["Regio's"]
-provincie_juist = rij["Provincie Naam (Naam)"]
+# Nieuwe vraag na beantwoording
+if st.session_state.show_new_question:
+    st.session_state.vraag = df.sample(1).iloc[0]
+    st.session_state.feedback = None
+    st.session_state.show_new_question = False
+
+plaats = st.session_state.vraag["Regio's"]
+provincie = st.session_state.vraag["Provincie Naam (Naam)"]
 
 st.markdown(f"📍 **In welke provincie ligt de plaats _{plaats}_?**")
 
-# Invoerveld + knop
-with st.form("quiz_form"):
-    antwoord = st.text_input("Typ hier je antwoord:", value="" if st.session_state["trigger_next"] else st.session_state["antwoord"], disabled=st.session_state.input_disabled)
+# Formulier
+with st.form("quiz"):
+    antwoord = st.text_input("Typ hier je antwoord:")
     submitted = st.form_submit_button("Indienen")
 
-# Als formulier werd ingediend
-if submitted and not st.session_state.input_disabled:
-    st.session_state.totaal += 1
-    st.session_state.antwoord = antwoord
-    if antwoord.strip().lower() == provincie_juist.lower():
-        st.session_state.goed += 1
-        st.session_state.feedback = "✅ Goed geraden!"
+# Beoordeling
+if submitted:
+    st.session_state.score["totaal"] += 1
+    if antwoord.strip().lower() == provincie.lower():
+        st.session_state.score["goed"] += 1
+        st.session_state.feedback = ("✅ Goed geraden!", "success")
     else:
-        st.session_state.feedback = f"❌ Fout! Het juiste antwoord is: **{provincie_juist}**"
-    st.session_state.input_disabled = True
-    st.session_state.trigger_next = True
+        st.session_state.feedback = (f"❌ Fout! Het juiste antwoord is: **{provincie}**", "error")
+    st.session_state.show_new_question = True
 
-# Feedback tonen buiten het formulier
+# Feedback tonen
 if st.session_state.feedback:
-    if "✅" in st.session_state.feedback:
-        st.success(st.session_state.feedback)
+    msg, status = st.session_state.feedback
+    if status == "success":
+        st.success(msg)
     else:
-        st.error(st.session_state.feedback)
+        st.error(msg)
 
-    # Score
-    percentage = (st.session_state.goed / st.session_state.totaal) * 100
-    st.info(f"🎯 Je hebt {st.session_state.goed} van {st.session_state.totaal} goed ({percentage:.1f}%)")
+    percentage = (st.session_state.score["goed"] / st.session_state.score["totaal"]) * 100
+    st.info(f"🎯 Je hebt {st.session_state.score['goed']} van {st.session_state.score['totaal']} goed ({percentage:.1f}%)")
 
-    # Start timer en prepare volgende vraag — maar NIET in dezelfde render
-    time.sleep(1)
-    st.session_state.current_row_index = (st.session_state.current_row_index + 1) % len(df)
-    st.session_state.feedback = ""
-    st.session_state.input_disabled = False
-    st.session_state.antwoord = ""
-    st.session_state.trigger_next = False
-    st.experimental_rerun()
+    # Automatische refresh via JS-truc
+    st.markdown("""
+        <script>
+            setTimeout(function() {
+                window.location.reload();
+            }, 1000);
+        </script>
+    """, unsafe_allow_html=True)
