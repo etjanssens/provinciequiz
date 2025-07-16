@@ -8,59 +8,49 @@ st.title("🧠 Raad de provincie bij de plaats!")
 @st.cache_data
 def load_data():
     df = pd.read_csv("woonplaatsen.csv")
-    df = df[["Regio's", "Provincie Naam (Naam)"]].dropna()
+    df = df[["woonplaats", "provincie"]].dropna().drop_duplicates()
     return df
 
 df = load_data()
 
-# Initialiseer sessiestatus
+# Initialiseer score
 if "score" not in st.session_state:
     st.session_state.score = {"goed": 0, "totaal": 0}
-if "vraag" not in st.session_state:
+if "vraag" not in st.session_state or st.session_state.get("nieuwe_vraag", True):
     st.session_state.vraag = df.sample(1).iloc[0]
-if "feedback" not in st.session_state:
-    st.session_state.feedback = None
-if "show_new_question" not in st.session_state:
-    st.session_state.show_new_question = False
+    st.session_state.feedback = ""
+    st.session_state.nieuwe_vraag = False
 
-# Nieuwe vraag na beantwoording
-if st.session_state.show_new_question:
-    st.session_state.vraag = df.sample(1).iloc[0]
-    st.session_state.feedback = None
-    st.session_state.show_new_question = False
-
-plaats = st.session_state.vraag["Regio's"]
-provincie = st.session_state.vraag["Provincie Naam (Naam)"]
+plaats = st.session_state.vraag["woonplaats"]
+provincie_juist = st.session_state.vraag["provincie"]
 
 st.markdown(f"📍 **In welke provincie ligt de plaats _{plaats}_?**")
 
 # Formulier
-with st.form("quiz"):
+with st.form("quiz_form"):
     antwoord = st.text_input("Typ hier je antwoord:")
     submitted = st.form_submit_button("Indienen")
 
-# Beoordeling
+# Verwerk antwoord
 if submitted:
     st.session_state.score["totaal"] += 1
-    if antwoord.strip().lower() == provincie.lower():
+    if antwoord.strip().lower() == provincie_juist.lower():
         st.session_state.score["goed"] += 1
-        st.session_state.feedback = ("✅ Goed geraden!", "success")
+        st.session_state.feedback = "✅ Goed geraden!"
     else:
-        st.session_state.feedback = (f"❌ Fout! Het juiste antwoord is: **{provincie}**", "error")
-    st.session_state.show_new_question = True
+        st.session_state.feedback = f"❌ Fout! Het juiste antwoord is: **{provincie_juist}**"
+    st.session_state.nieuwe_vraag = True
 
-# Feedback tonen
+# Toon feedback
 if st.session_state.feedback:
-    msg, status = st.session_state.feedback
-    if status == "success":
-        st.success(msg)
+    if st.session_state.feedback.startswith("✅"):
+        st.success(st.session_state.feedback)
     else:
-        st.error(msg)
-
+        st.error(st.session_state.feedback)
     percentage = (st.session_state.score["goed"] / st.session_state.score["totaal"]) * 100
     st.info(f"🎯 Je hebt {st.session_state.score['goed']} van {st.session_state.score['totaal']} goed ({percentage:.1f}%)")
 
-    # Automatische refresh via JS-truc
+    # Automatische herlaad na 1 seconde
     st.markdown("""
         <script>
             setTimeout(function() {
