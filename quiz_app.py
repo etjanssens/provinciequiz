@@ -9,12 +9,6 @@ st.title("🧠 Raad de provincie bij de plaats!")
 @st.cache_data
 def load_data():
     df = pd.read_csv("woonplaatsen.csv")
-    if "woonplaats" not in df.columns or "provincie" not in df.columns:
-        st.error("CSV mist kolommen 'woonplaats' en/of 'provincie'.")
-        st.stop()
-    return df[["woonplaats", "provincie"]].dropna().drop_duplicates()
-
-df = load_data()
 
 alle_provincies = sorted(df["provincie"].unique())
 
