@@ -7,9 +7,25 @@ st.title("🧠 Raad de provincie bij de plaats!")
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("woonplaatsen.csv")
-    df = df[["woonplaats", "provincie"]].dropna().drop_duplicates()
-    return df
+    import os
+    st.write("Bestanden in map:", os.listdir())  # Debug: wat ziet Streamlit?
+
+    try:
+        df = pd.read_csv("woonplaatsen.csv")
+        st.write("Kolommen ingelezen:", df.columns.tolist())  # Debug: wat is er binnengekomen?
+
+        if "woonplaats" in df.columns and "provincie" in df.columns:
+            df = df[["woonplaats", "provincie"]].dropna().drop_duplicates()
+            return df
+        else:
+            st.error("❌ Vereiste kolommen 'woonplaats' en/of 'provincie' ontbreken.")
+            st.stop()
+    except FileNotFoundError:
+        st.error("📁 Bestand 'woonplaatsen.csv' niet gevonden. Staat het in je repo?")
+        st.stop()
+    except Exception as e:
+        st.error(f"⚠️ Onverwachte fout bij laden CSV: {e}")
+        st.stop()
 
 df = load_data()
 
