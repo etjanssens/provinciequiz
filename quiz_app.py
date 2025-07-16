@@ -16,26 +16,40 @@ def load_data():
 df = load_data()
 alle_provincies = sorted(df["provincie"].unique())
 
-# Session state initialiseren
+# Initialiseer sessiestate
 if "score" not in st.session_state:
     st.session_state.score = {"goed": 0, "totaal": 0}
 if "vraag" not in st.session_state:
     st.session_state.vraag = df.sample(1).iloc[0]
 if "keuze" not in st.session_state:
     st.session_state.keuze = ""
+if "klaar_voor_volgende" not in st.session_state:
+    st.session_state.klaar_voor_volgende = False
 
+# Als we net feedback hebben laten zien en willen doorgaan
+if st.session_state.klaar_voor_volgende:
+    st.session_state.vraag = df.sample(1).iloc[0]
+    st.session_state.keuze = ""
+    st.session_state.klaar_voor_volgende = False
+    st.rerun()
+
+# Vraag tonen
 plaats = st.session_state.vraag["woonplaats"]
 juiste_provincie = st.session_state.vraag["provincie"]
 
 st.markdown(f"📍 **In welke provincie ligt de plaats _{plaats}_?**")
 
-# Dropdown die de sessiestate 'keuze' gebruikt
-antwoord = st.selectbox("Kies de provincie:", [""] + alle_provincies, index=0, key="keuze")
+# Dropdown
+antwoord = st.selectbox(
+    "Kies de provincie:",
+    [""] + alle_provincies,
+    index=0 if st.session_state.keuze == "" else alle_provincies.index(st.session_state.keuze) + 1,
+    key="keuze"
+)
 
-# Als gebruiker een geldige keuze maakt
-if antwoord and antwoord != "":
+# Alleen reageren op echte keuze
+if antwoord and not st.session_state.klaar_voor_volgende:
     st.session_state.score["totaal"] += 1
-
     if antwoord == juiste_provincie:
         st.session_state.score["goed"] += 1
         st.success("✅ Goed geraden!")
@@ -47,16 +61,16 @@ if antwoord and antwoord != "":
     percentage = (goed / totaal) * 100
     st.info(f"🎯 Je hebt {goed} van {totaal} goed ({percentage:.1f}%)")
 
-    # Reset keuzeveld en toon nieuwe vraag na pauze
-    st.session_state.keuze = ""
+    # Zet flag om bij volgende run de vraag en dropdown te resetten
+    st.session_state.klaar_voor_volgende = True
     time.sleep(2)
-    st.session_state.vraag = df.sample(1).iloc[0]
     st.rerun()
 
-# Opnieuw beginnen knop
+# Opnieuw beginnen
 with st.sidebar:
     if st.button("🔁 Opnieuw beginnen"):
         st.session_state.score = {"goed": 0, "totaal": 0}
         st.session_state.vraag = df.sample(1).iloc[0]
         st.session_state.keuze = ""
+        st.session_state.klaar_voor_volgende = False
         st.rerun()
