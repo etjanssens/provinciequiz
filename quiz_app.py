@@ -4,6 +4,7 @@ import time
 
 st.set_page_config(page_title="Raad de provincie", page_icon="🧠")
 st.title("🧠 Raad de provincie bij de plaats!")
+st.markdown("**Van Emiel Janssens, voor Faye Bovelander ❤️**")
 
 @st.cache_data
 def load_data():
@@ -16,13 +17,13 @@ def load_data():
 df = load_data()
 alle_provincies = sorted(df["provincie"].unique())
 
-# Initialiseer sessiestate
+# Initialiseer sessiestatus
 if "score" not in st.session_state:
     st.session_state.score = {"goed": 0, "totaal": 0}
 if "vraag" not in st.session_state:
     st.session_state.vraag = df.sample(1).iloc[0]
 if "keuze" not in st.session_state:
-    st.session_state.keuze = ""
+    st.session_state.keuze = None
 if "klaar_voor_volgende" not in st.session_state:
     st.session_state.klaar_voor_volgende = False
 
@@ -32,39 +33,27 @@ totaal = st.session_state.score["totaal"]
 percentage = (goed / totaal * 100) if totaal > 0 else 0
 st.info(f"🎯 Je hebt {goed} van {totaal} goed ({percentage:.1f}%)")
 
-# Volgende vraag klaarzetten als vorige was beantwoord
+# Volgende vraag als vorige klaar is
 if st.session_state.klaar_voor_volgende:
     st.session_state.vraag = df.sample(1).iloc[0]
-    st.session_state.keuze = ""
+    st.session_state.keuze = None
     st.session_state.klaar_voor_volgende = False
     st.rerun()
 
-# Toon vraag
+# Vraag tonen
 plaats = st.session_state.vraag["woonplaats"]
 juiste_provincie = st.session_state.vraag["provincie"]
 st.markdown(f"📍 **In welke provincie ligt de plaats _{plaats}_?**")
 
-# Forceer focus op de selectbox via JavaScript
-st.components.v1.html("""
-<script>
-    const select = window.parent.document.querySelector('select');
-    if (select) { select.focus(); }
-</script>
-""", height=0)
-
-# Dropdown (geheugenvriendelijk)
-index = 0
-if st.session_state.keuze in alle_provincies:
-    index = alle_provincies.index(st.session_state.keuze) + 1
-
-antwoord = st.selectbox(
+# Provincie kiezen via radio (automatisch focusbaar)
+antwoord = st.radio(
     "Kies de provincie:",
-    [""] + alle_provincies,
-    index=index,
-    key="keuze"
+    alle_provincies,
+    index=alle_provincies.index(st.session_state.keuze) if st.session_state.keuze else 0,
+    key="keuze",
 )
 
-# Antwoordverwerking
+# Verwerk antwoord
 if antwoord and not st.session_state.klaar_voor_volgende:
     st.session_state.score["totaal"] += 1
     if antwoord == juiste_provincie:
@@ -77,11 +66,11 @@ if antwoord and not st.session_state.klaar_voor_volgende:
     time.sleep(2)
     st.rerun()
 
-# Opnieuw beginnen
+# Resetknop
 with st.sidebar:
     if st.button("🔁 Opnieuw beginnen"):
         st.session_state.score = {"goed": 0, "totaal": 0}
         st.session_state.vraag = df.sample(1).iloc[0]
-        st.session_state.keuze = ""
+        st.session_state.keuze = None
         st.session_state.klaar_voor_volgende = False
         st.rerun()
