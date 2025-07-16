@@ -32,14 +32,17 @@ if "vraag" not in st.session_state or st.session_state.get("nieuwe_vraag", True)
 
 plaats = st.session_state.vraag["woonplaats"]
 provincie_juist = st.session_state.vraag["provincie"]
+juiste_antwoord = provincie_juist.strip().lower()
 
 st.markdown(f"📍 **In welke provincie ligt de plaats _{plaats}_?**")
 
-# Invoerveld buiten formulier — automatisch controleren
+# Invoerveld
 antwoord = st.text_input("Typ hier de provincie:", key="antwoordveld").strip().lower()
-juiste_antwoord = provincie_juist.strip().lower()
 
-# Automatisch controleren als gebruiker iets typt
+# Lijst van alle provincienamen
+alle_provincies = [p.lower() for p in df["provincie"].unique()]
+
+# Automatisch controleren zodra de invoer een volledige provincienaam is
 if antwoord:
     if antwoord == juiste_antwoord:
         st.session_state.score["goed"] += 1
@@ -47,7 +50,7 @@ if antwoord:
         st.session_state.feedback = "✅ Goed geraden!"
         st.session_state.nieuwe_vraag = True
         st.rerun()
-    elif len(antwoord) >= len(juiste_antwoord):
+    elif antwoord in alle_provincies:
         st.session_state.score["totaal"] += 1
         st.session_state.feedback = f"❌ Fout! Het juiste antwoord is: **{provincie_juist}**"
         st.session_state.nieuwe_vraag = True
