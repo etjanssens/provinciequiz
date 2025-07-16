@@ -2,10 +2,37 @@ import streamlit as st
 import pandas as pd
 import time
 
+# Pagina-instellingen
 st.set_page_config(page_title="Raad de provincie", page_icon="🧠")
+
+# 🌤️ Achtergrondstijl injecteren
+st.markdown("""
+    <style>
+    body {
+        background: linear-gradient(to bottom, #a7d7f9 0%, #ffffff 30%, #b9e7ba 100%);
+        background-attachment: fixed;
+    }
+    .stApp {
+        background: transparent;
+    }
+    h1, .stTitle {
+        color: #205522;
+    }
+    .stButton>button {
+        background-color: #228b22;
+        color: white;
+    }
+    .stSelectbox label {
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Titel + boodschap
 st.title("🧠 Raad de provincie bij de plaats!")
 st.markdown("**Van Emiel Janssens, voor Faye Bovelander ❤️**")
 
+# Data laden
 @st.cache_data
 def load_data():
     df = pd.read_csv("woonplaatsen.csv")
@@ -17,41 +44,37 @@ def load_data():
 df = load_data()
 alle_provincies = sorted(df["provincie"].unique())
 
-# Initialiseer sessiestatus
+# Session state
 if "score" not in st.session_state:
     st.session_state.score = {"goed": 0, "totaal": 0}
 if "vraag" not in st.session_state:
     st.session_state.vraag = df.sample(1).iloc[0]
 if "keuze" not in st.session_state:
-    st.session_state.keuze = None
+    st.session_state.keuze = ""
 if "klaar_voor_volgende" not in st.session_state:
     st.session_state.klaar_voor_volgende = False
 
-# Score altijd tonen
+# Score bovenaan
 goed = st.session_state.score["goed"]
 totaal = st.session_state.score["totaal"]
 percentage = (goed / totaal * 100) if totaal > 0 else 0
 st.info(f"🎯 Je hebt {goed} van {totaal} goed ({percentage:.1f}%)")
 
-# Volgende vraag als vorige klaar is
+# Als vorige vraag beantwoord is → nieuwe vraag
 if st.session_state.klaar_voor_volgende:
     st.session_state.vraag = df.sample(1).iloc[0]
-    st.session_state.keuze = None
+    st.session_state.keuze = ""
     st.session_state.klaar_voor_volgende = False
     st.rerun()
 
-# Vraag tonen
+# Vraag stellen
 plaats = st.session_state.vraag["woonplaats"]
 juiste_provincie = st.session_state.vraag["provincie"]
+
 st.markdown(f"📍 **In welke provincie ligt de plaats _{plaats}_?**")
 
-# Provincie kiezen via radio (automatisch focusbaar)
-antwoord = st.radio(
-    "Kies de provincie:",
-    alle_provincies,
-    index=alle_provincies.index(st.session_state.keuze) if st.session_state.keuze else 0,
-    key="keuze",
-)
+# Dropdown
+antwoord = st.selectbox("Kies de provincie:", [""] + alle_provincies, index=0, key="keuze")
 
 # Verwerk antwoord
 if antwoord and not st.session_state.klaar_voor_volgende:
@@ -71,6 +94,6 @@ with st.sidebar:
     if st.button("🔁 Opnieuw beginnen"):
         st.session_state.score = {"goed": 0, "totaal": 0}
         st.session_state.vraag = df.sample(1).iloc[0]
-        st.session_state.keuze = None
+        st.session_state.keuze = ""
         st.session_state.klaar_voor_volgende = False
         st.rerun()
