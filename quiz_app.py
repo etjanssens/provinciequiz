@@ -9,28 +9,33 @@ st.title("🧠 Raad de provincie bij de plaats!")
 @st.cache_data
 def load_data():
     df = pd.read_csv("woonplaatsen.csv")
+    if "woonplaats" not in df.columns or "provincie" not in df.columns:
+        st.error("CSV mist kolommen 'woonplaats' en/of 'provincie'.")
+        st.stop()
+    return df[["woonplaats", "provincie"]].dropna().drop_duplicates()
 
+# ❗ EERST laden, daarna pas gebruiken
+df = load_data()
 alle_provincies = sorted(df["provincie"].unique())
 
-# Init state
+# Initialiseer sessiestatus
 if "score" not in st.session_state:
     st.session_state.score = {"goed": 0, "totaal": 0}
 if "vraag" not in st.session_state:
     st.session_state.vraag = df.sample(1).iloc[0]
-if "feedback" not in st.session_state:
-    st.session_state.feedback = ""
 if "laatste_antwoord" not in st.session_state:
     st.session_state.laatste_antwoord = ""
 
+# Vraag tonen
 plaats = st.session_state.vraag["woonplaats"]
 juiste_provincie = st.session_state.vraag["provincie"]
 
 st.markdown(f"📍 **In welke provincie ligt de plaats _{plaats}_?**")
 
-# Dropdown met alle provincies
+# Dropdown met provincies
 antwoord = st.selectbox("Kies de provincie:", [""] + alle_provincies, index=0)
 
-# Alleen checken als gebruiker iets gekozen heeft
+# Check zodra iets nieuws gekozen is
 if antwoord and antwoord != st.session_state.laatste_antwoord:
     st.session_state.score["totaal"] += 1
     st.session_state.laatste_antwoord = antwoord
@@ -46,20 +51,15 @@ if antwoord and antwoord != st.session_state.laatste_antwoord:
     percentage = (goed / totaal) * 100
     st.info(f"🎯 Je hebt {goed} van {totaal} goed ({percentage:.1f}%)")
 
-    # Tijd geven om feedback te lezen
     time.sleep(2)
-
-    # Reset en nieuwe vraag
     st.session_state.vraag = df.sample(1).iloc[0]
-    st.session_state.feedback = ""
     st.session_state.laatste_antwoord = ""
     st.rerun()
 
-# Resetknop in de sidebar
+# Resetknop
 with st.sidebar:
     if st.button("🔁 Opnieuw beginnen"):
         st.session_state.score = {"goed": 0, "totaal": 0}
         st.session_state.vraag = df.sample(1).iloc[0]
-        st.session_state.feedback = ""
         st.session_state.laatste_antwoord = ""
         st.rerun()
