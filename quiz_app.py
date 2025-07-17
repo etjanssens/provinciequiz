@@ -16,10 +16,21 @@ st.markdown("""
     .stApp {
         background: transparent;
     }
+
+    /* Algemene tekstkleur */
+    html, body, p, div, span, h1, h2, h3, h4, h5, h6 {
+        color: #003a1b !important;
+    }
+
     h1, .stTitle {
-        color: #01A747;
+        color: #01A747 !important;
         font-weight: bold;
     }
+
+    .stMarkdown strong {
+        color: #003a1b !important;
+    }
+
     .stButton>button {
         background-color: #01A747;
         color: white;
@@ -31,10 +42,12 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #028a3a;
     }
+
     .stSelectbox label {
         font-weight: bold;
         color: #01A747;
     }
+
     .stSidebar {
         background-color: #f7f7f7;
     }
