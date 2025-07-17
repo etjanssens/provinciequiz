@@ -1,12 +1,14 @@
 import streamlit as st
 import pandas as pd
+import random
 import time
 
 # Pagina setup
-st.set_page_config(page_title="Raad de provincie", page_icon="🐼")
+st.set_page_config(page_title="Raad de provincie", page_icon="🧠")
+
+# 🌿 Huisstijl (inclusief GL-PvdA kleuren en achtergrond)
 st.markdown("""
     <style>
-    /* Achtergrond met lucht en weilandgevoel */
     body {
         background: linear-gradient(to bottom, #e6f7f1 0%, #ffffff 30%, #d4f5d2 100%);
         background-attachment: fixed;
@@ -33,23 +35,20 @@ st.markdown("""
         font-weight: bold;
         color: #01A747;
     }
-    .stProgress > div > div > div {
-        background-color: #01A747;
-    }
     .stSidebar {
         background-color: #f7f7f7;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Logo bovenaan
+# Logo
 st.markdown(
     '<img src="https://groenlinkspvda.nl/wp-content/uploads/2023/09/GL-PvdA-logo-1.svg" width="220">',
     unsafe_allow_html=True
 )
 
-# Titel en subtitel
-st.title("🧠 Raad de provincie bij de plaats!")
+# Titel
+st.title("🐼 Raad de provincie bij de plaats!")
 st.markdown("**Van Emiel Janssens, voor het campagneteam ❤️**")
 
 # Data inladen
@@ -64,61 +63,80 @@ def load_data():
 df = load_data()
 alle_provincies = sorted(df["provincie"].unique())
 
-# Session state
-if "score" not in st.session_state:
-    st.session_state.score = {"goed": 0, "totaal": 0}
-if "vraag" not in st.session_state:
-    st.session_state.vraag = df.sample(1).iloc[0]
-if "keuze" not in st.session_state:
+# Init session state
+if "vragenlijst" not in st.session_state:
+    st.session_state.vragenlijst = random.sample(df.to_dict(orient="records"), 15)
+    st.session_state.huidige_index = 0
+    st.session_state.goed_geraden = 0
     st.session_state.keuze = ""
-if "klaar_voor_volgende" not in st.session_state:
+    st.session_state.feedback_toon = False
     st.session_state.klaar_voor_volgende = False
 
-# Score bovenaan
-goed = st.session_state.score["goed"]
-totaal = st.session_state.score["totaal"]
-percentage = (goed / totaal * 100) if totaal > 0 else 0
-st.info(f"🎯 Je hebt {goed} van {totaal} goed ({percentage:.1f}%)")
+# Eindscherm
+if st.session_state.huidige_index >= len(st.session_state.vragenlijst):
+    score = st.session_state.goed_geraden
+    totaal = len(st.session_state.vragenlijst)
+    percentage = (score / totaal) * 100
 
-# Nieuwe vraag bij doorloop
-if st.session_state.klaar_voor_volgende:
-    st.session_state.vraag = df.sample(1).iloc[0]
-    st.session_state.keuze = ""
-    st.session_state.klaar_voor_volgende = False
-    st.rerun()
+    st.success(f"🎉 Je hebt {score} van de {totaal} goed ({percentage:.1f}%)!")
 
-# Vraag tonen
-plaats = st.session_state.vraag["woonplaats"]
-juiste_provincie = st.session_state.vraag["provincie"]
+    # Kopieerbare tekst
+    deeltekst = f"Ik had {score} van de {totaal} goed in de GroenLinks-PvdA Provinciequiz! 🇳🇱🧠 #provinciequiz"
 
-st.markdown(f"📍 **In welke provincie ligt de plaats _{plaats}_?**")
+    st.markdown("### Deel jouw score:")
+    st.code(deeltekst, language="markdown")
+    st.markdown("""
+        <button onclick="navigator.clipboard.writeText(`%s`)" style="background-color:#01A747;color:white;padding:0.5em 1em;border:none;border-radius:6px;font-weight:bold;">
+            📋 Kopieer naar klembord
+        </button>
+        <br><br>
+    """ % deeltekst, unsafe_allow_html=True)
 
-# Dropdown
+    if st.button("🔁 Probeer opnieuw"):
+        for key in ["vragenlijst", "huidige_index", "goed_geraden", "keuze", "feedback_toon", "klaar_voor_volgende"]:
+            del st.session_state[key]
+        st.rerun()
+
+    st.stop()
+
+# Vraag
+vraag = st.session_state.vragenlijst[st.session_state.huidige_index]
+plaats = vraag["woonplaats"]
+juiste_provincie = vraag["provincie"]
+
+# Voortgang
+vraagnummer = st.session_state.huidige_index + 1
+st.markdown(f"🔄 **Vraag {vraagnummer} van 15**")
+st.markdown(f"📍 In welke provincie ligt de plaats _{plaats}_?")
+
+# Antwoordkeuze
 antwoord = st.selectbox("Kies de provincie:", [""] + alle_provincies, index=0, key="keuze")
 
-# Verwerken
-if antwoord and not st.session_state.klaar_voor_volgende:
-    st.session_state.score["totaal"] += 1
+# Verwerking
+if antwoord and not st.session_state.feedback_toon:
+    st.session_state.feedback_toon = True
     if antwoord == juiste_provincie:
-        st.session_state.score["goed"] += 1
         st.success("✅ Goed geraden!")
+        st.session_state.goed_geraden += 1
     else:
         st.error(f"❌ Fout! Het juiste antwoord is: **{juiste_provincie}**")
 
-    # Voortgangsbalk (korter)
-    st.session_state.klaar_voor_volgende = True
+    # Animatie/vertraging met voortgang
     with st.empty():
         bar = st.progress(0)
-        for i in range(100):
-            time.sleep(0.012)  # 1.2 seconde animatie
+        for i in range(80):
+            time.sleep(0.012)  # 1s
             bar.progress(i + 1)
+
+    # Naar volgende
+    st.session_state.huidige_index += 1
+    st.session_state.keuze = ""
+    st.session_state.feedback_toon = False
     st.rerun()
 
-# Resetknop
+# Resetknop in de sidebar
 with st.sidebar:
     if st.button("🔁 Opnieuw beginnen"):
-        st.session_state.score = {"goed": 0, "totaal": 0}
-        st.session_state.vraag = df.sample(1).iloc[0]
-        st.session_state.keuze = ""
-        st.session_state.klaar_voor_volgende = False
+        for key in ["vragenlijst", "huidige_index", "goed_geraden", "keuze", "feedback_toon", "klaar_voor_volgende"]:
+            del st.session_state[key]
         st.rerun()
