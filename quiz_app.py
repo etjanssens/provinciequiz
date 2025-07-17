@@ -86,7 +86,13 @@ if antwoord and not st.session_state.klaar_voor_volgende:
         st.error(f"❌ Fout! Het juiste antwoord is: **{juiste_provincie}**")
 
     st.session_state.klaar_voor_volgende = True
-    time.sleep(2)
+   # Vooruitgangsbalk tonen in plaats van wachten
+    with st.empty():
+        progress_bar = st.progress(0)
+        for i in range(100):
+            time.sleep(0.02)
+            progress_bar.progress(i + 1)
+
     st.rerun()
 
 # Resetknop
