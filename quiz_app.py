@@ -87,7 +87,6 @@ if "vragenlijst" not in st.session_state:
 if st.session_state.huidige_index >= len(st.session_state.vragenlijst):
     score = st.session_state.goed_geraden
     totaal = len(st.session_state.vragenlijst)
-    percentage = (score / totaal) * 100
 
     # Feedback per score
     feedback_zinnen = {
@@ -104,13 +103,13 @@ if st.session_state.huidige_index >= len(st.session_state.vragenlijst):
         10: "🧠 Jij hebt deze quiz gehackt. Of je bent gewoon heel slim!",
     }
 
-    oordeel = feedback_zinnen.get(score, "")
-    st.success(f"🎉 Je hebt {score} van de {totaal} goed ({percentage:.1f}%)! {oordeel}")
+    oordeel = feedback_zinnen.get(score, "🇳🇱 Nederland blijft verrassen!")
+    eindtekst = f"🎉 Je had {score} van de {totaal} goed.\n{oordeel}"
 
-    deeltekst = f"Ik had {score} van de {totaal} goed in de GroenLinks-PvdA Provinciequiz! 🇳🇱🧠 #provinciequiz"
+    st.success(eindtekst)
 
-    st.markdown("### Deel jouw score:")
-    st.code(deeltekst, language="markdown")
+    st.markdown("### Deel jouw resultaat:")
+    st.code(eindtekst, language="markdown")
     st.markdown("📋 Selecteer en kopieer de tekst hierboven om te delen op WhatsApp, socials of mail.")
 
     if st.button("🔁 Probeer opnieuw"):
