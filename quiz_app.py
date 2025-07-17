@@ -30,7 +30,7 @@ st.markdown("""
 
 # Titel + boodschap
 st.title("🧠 Raad de provincie bij de plaats!")
-st.markdown("**Van Emiel Janssens, voor Faye Bovelander ❤️**")
+st.markdown("**Van Emiel Janssens, voor het campagneteam ❤️**")
 
 # Data laden
 @st.cache_data
