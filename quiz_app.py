@@ -89,16 +89,22 @@ if st.session_state.huidige_index >= len(st.session_state.vragenlijst):
     totaal = len(st.session_state.vragenlijst)
     percentage = (score / totaal) * 100
 
-    # Tekst op basis van percentage
-    if percentage <= 25:
-        oordeel = "🪙 Muntje in de randstedelijke arrogantiepot!"
-    elif percentage <= 50:
-        oordeel = "🚇 Jij komt duidelijk niet vaak buiten de ring."
-    elif percentage <= 75:
-        oordeel = "🚗 Jij kent best veel in Nederland. Heb je een auto ofzo?"
-    else:
-        oordeel = "🧠 Jij hebt deze quiz gehackt. Of je bent gewoon heel slim!"
+    # Feedback per score
+    feedback_zinnen = {
+        0: "🪙 Muntje in de randstedelijke arrogantiepot!",
+        1: "🧭 Je weet net genoeg om verdwaald te raken in je eigen provincie.",
+        2: "🚫 Je hebt duidelijk een blinde vlek buiten je eigen postcode.",
+        3: "🛵 Jij komt niet vaak buiten de ring, maar áls je er komt, geniet je des te meer.",
+        4: "🌫️ Je hebt ooit wel eens van Groningen gehoord, maar daar blijft het bij.",
+        5: "🚆 Misschien een NS-kortingskaart overwegen om eens wat van ons mooie land te ontdekken?",
+        6: "🚶 Niet slecht! Jij komt weleens ergens. Letterlijk.",
+        7: "🚗 Jij kent best veel in Nederland. Heb je een auto ofzo?",
+        8: "🗺️ Jij bent het menselijk alternatief voor de ANWB-routeplanner.",
+        9: "📡 Jij bent het type dat het weerbericht per provincie volgt.",
+        10: "🧠 Jij hebt deze quiz gehackt. Of je bent gewoon heel slim!",
+    }
 
+    oordeel = feedback_zinnen.get(score, "")
     st.success(f"🎉 Je hebt {score} van de {totaal} goed ({percentage:.1f}%)! {oordeel}")
 
     deeltekst = f"Ik had {score} van de {totaal} goed in de GroenLinks-PvdA Provinciequiz! 🇳🇱🧠 #provinciequiz"
