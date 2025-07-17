@@ -6,7 +6,7 @@ import time
 # Pagina setup
 st.set_page_config(page_title="Raad de provincie", page_icon="🧠")
 
-# 🌿 Huisstijl (inclusief GL-PvdA kleuren en achtergrond)
+# 🌿 Huisstijl en achtergrond
 st.markdown("""
     <style>
     body {
@@ -47,9 +47,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Titel
-st.title("🐼 Raad de provincie bij de plaats!")
-st.markdown("**Van Emiel Janssens, voor het campagneteam ❤️**")
+# Titel en subtitel
+st.title("🧠 Raad de provincie bij de plaats!")
+st.markdown("**Van Emiel Janssens, voor Faye Bovelander ❤️**")
 
 # Data inladen
 @st.cache_data
@@ -63,16 +63,14 @@ def load_data():
 df = load_data()
 alle_provincies = sorted(df["provincie"].unique())
 
-# Init session state
+# Session state initialiseren
 if "vragenlijst" not in st.session_state:
     st.session_state.vragenlijst = random.sample(df.to_dict(orient="records"), 15)
     st.session_state.huidige_index = 0
     st.session_state.goed_geraden = 0
-    st.session_state.keuze = ""
     st.session_state.feedback_toon = False
-    st.session_state.klaar_voor_volgende = False
 
-# Eindscherm
+# EINDSCHERM
 if st.session_state.huidige_index >= len(st.session_state.vragenlijst):
     score = st.session_state.goed_geraden
     totaal = len(st.session_state.vragenlijst)
@@ -80,7 +78,6 @@ if st.session_state.huidige_index >= len(st.session_state.vragenlijst):
 
     st.success(f"🎉 Je hebt {score} van de {totaal} goed ({percentage:.1f}%)!")
 
-    # Kopieerbare tekst
     deeltekst = f"Ik had {score} van de {totaal} goed in de GroenLinks-PvdA Provinciequiz! 🇳🇱🧠 #provinciequiz"
 
     st.markdown("### Deel jouw score:")
@@ -93,24 +90,30 @@ if st.session_state.huidige_index >= len(st.session_state.vragenlijst):
     """ % deeltekst, unsafe_allow_html=True)
 
     if st.button("🔁 Probeer opnieuw"):
-        for key in ["vragenlijst", "huidige_index", "goed_geraden", "keuze", "feedback_toon", "klaar_voor_volgende"]:
+        for key in ["vragenlijst", "huidige_index", "goed_geraden", "feedback_toon"]:
             del st.session_state[key]
         st.rerun()
 
     st.stop()
 
-# Vraag
+# Vraag laden
 vraag = st.session_state.vragenlijst[st.session_state.huidige_index]
 plaats = vraag["woonplaats"]
 juiste_provincie = vraag["provincie"]
+vraagnummer = st.session_state.huidige_index + 1
+antwoord_key = f"keuze_{vraagnummer}"
 
 # Voortgang
-vraagnummer = st.session_state.huidige_index + 1
 st.markdown(f"🔄 **Vraag {vraagnummer} van 15**")
 st.markdown(f"📍 In welke provincie ligt de plaats _{plaats}_?")
 
-# Antwoordkeuze
-antwoord = st.selectbox("Kies de provincie:", [""] + alle_provincies, index=0, key="keuze")
+# Keuzemenu met unieke key per vraag
+antwoord = st.selectbox(
+    "Kies de provincie:",
+    [""] + alle_provincies,
+    index=0,
+    key=antwoord_key
+)
 
 # Verwerking
 if antwoord and not st.session_state.feedback_toon:
@@ -121,22 +124,14 @@ if antwoord and not st.session_state.feedback_toon:
     else:
         st.error(f"❌ Fout! Het juiste antwoord is: **{juiste_provincie}**")
 
-    # Animatie/vertraging met voortgang
+    # Animatie
     with st.empty():
         bar = st.progress(0)
-        for i in range(80):
-            time.sleep(0.012)  # 1s
+        for i in range(80):  # ±1s
+            time.sleep(0.012)
             bar.progress(i + 1)
 
-    # Naar volgende
+    # Volgende vraag
     st.session_state.huidige_index += 1
-    st.session_state.keuze = ""
     st.session_state.feedback_toon = False
     st.rerun()
-
-# Resetknop in de sidebar
-with st.sidebar:
-    if st.button("🔁 Opnieuw beginnen"):
-        for key in ["vragenlijst", "huidige_index", "goed_geraden", "keuze", "feedback_toon", "klaar_voor_volgende"]:
-            del st.session_state[key]
-        st.rerun()
