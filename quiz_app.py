@@ -48,8 +48,8 @@ st.markdown(
 )
 
 # Titel en subtitel
-st.title("🚨 Raad de provincie bij de plaats!")
-st.markdown("**Van Emiel Janssens, voor Faye Bovelander ❤️💚**")
+st.title("🧠 Raad de provincie bij de plaats!")
+st.markdown("**Van Emiel Janssens, voor Faye Bovelander ❤️**")
 
 # Data inladen
 @st.cache_data
@@ -65,7 +65,7 @@ alle_provincies = sorted(df["provincie"].unique())
 
 # Session state initialiseren
 if "vragenlijst" not in st.session_state:
-    st.session_state.vragenlijst = random.sample(df.to_dict(orient="records"), 15)
+    st.session_state.vragenlijst = random.sample(df.to_dict(orient="records"), 10)
     st.session_state.huidige_index = 0
     st.session_state.goed_geraden = 0
     st.session_state.feedback_toon = False
@@ -92,22 +92,7 @@ if st.session_state.huidige_index >= len(st.session_state.vragenlijst):
 
     st.markdown("### Deel jouw score:")
     st.code(deeltekst, language="markdown")
-
-    # ✅ Kopieer naar klembord via verborgen input en JavaScript
-    st.markdown(f"""
-        <input type="text" value="{deeltekst}" id="shareText" readonly style="position:absolute; left:-1000px">
-        <button onclick="copyText()" style="background-color:#01A747;color:white;padding:0.5em 1em;border:none;border-radius:6px;font-weight:bold;">
-            📋 Kopieer naar klembord
-        </button>
-        <script>
-        function copyText() {{
-            var copyText = document.getElementById("shareText");
-            copyText.select();
-            document.execCommand("copy");
-            alert("✅ Gekopieerd naar klembord!");
-        }}
-        </script>
-    """, unsafe_allow_html=True)
+    st.markdown("📋 Selecteer en kopieer de tekst hierboven om te delen op WhatsApp, socials of mail.")
 
     if st.button("🔁 Probeer opnieuw"):
         for key in ["vragenlijst", "huidige_index", "goed_geraden", "feedback_toon"]:
@@ -121,13 +106,14 @@ vraag = st.session_state.vragenlijst[st.session_state.huidige_index]
 plaats = vraag["woonplaats"]
 juiste_provincie = vraag["provincie"]
 vraagnummer = st.session_state.huidige_index + 1
+totaal = len(st.session_state.vragenlijst)
 antwoord_key = f"keuze_{vraagnummer}"
 
 # Voortgang
-st.markdown(f"🔄 **Vraag {vraagnummer} van 15**")
+st.markdown(f"🔄 **Vraag {vraagnummer} van {totaal}**")
 st.markdown(f"📍 In welke provincie ligt de plaats _{plaats}_?")
 
-# Keuzemenu met unieke key per vraag
+# Keuzemenu
 antwoord = st.selectbox(
     "Kies de provincie:",
     [""] + alle_provincies,
@@ -155,3 +141,10 @@ if antwoord and not st.session_state.feedback_toon:
     st.session_state.huidige_index += 1
     st.session_state.feedback_toon = False
     st.rerun()
+
+# Resetknop in sidebar
+with st.sidebar:
+    if st.button("🔁 Opnieuw beginnen"):
+        for key in ["vragenlijst", "huidige_index", "goed_geraden", "feedback_toon"]:
+            del st.session_state[key]
+        st.rerun()
