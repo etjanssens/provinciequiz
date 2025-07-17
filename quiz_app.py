@@ -48,8 +48,8 @@ st.markdown(
 )
 
 # Titel en subtitel
-st.title("🧠 Raad de provincie bij de plaats!")
-st.markdown("**Van Emiel Janssens, voor Faye Bovelander ❤️**")
+st.title("🚨 Raad de provincie bij de plaats!")
+st.markdown("**Van Emiel Janssens, voor Faye Bovelander ❤️💚**")
 
 # Data inladen
 @st.cache_data
@@ -76,18 +76,38 @@ if st.session_state.huidige_index >= len(st.session_state.vragenlijst):
     totaal = len(st.session_state.vragenlijst)
     percentage = (score / totaal) * 100
 
-    st.success(f"🎉 Je hebt {score} van de {totaal} goed ({percentage:.1f}%)!")
+    # Tekst op basis van percentage
+    if percentage <= 25:
+        oordeel = "🪙 Muntje in de randstedelijke arrogantiepot!"
+    elif percentage <= 50:
+        oordeel = "🚇 Jij komt duidelijk niet vaak buiten de ring."
+    elif percentage <= 75:
+        oordeel = "🚗 Jij kent best veel in Nederland. Heb je een auto ofzo?"
+    else:
+        oordeel = "🧠 Jij hebt deze quiz gehackt. Of je bent gewoon heel slim!"
+
+    st.success(f"🎉 Je hebt {score} van de {totaal} goed ({percentage:.1f}%)! {oordeel}")
 
     deeltekst = f"Ik had {score} van de {totaal} goed in de GroenLinks-PvdA Provinciequiz! 🇳🇱🧠 #provinciequiz"
 
     st.markdown("### Deel jouw score:")
     st.code(deeltekst, language="markdown")
-    st.markdown("""
-        <button onclick="navigator.clipboard.writeText(`%s`)" style="background-color:#01A747;color:white;padding:0.5em 1em;border:none;border-radius:6px;font-weight:bold;">
+
+    # ✅ Kopieer naar klembord via verborgen input en JavaScript
+    st.markdown(f"""
+        <input type="text" value="{deeltekst}" id="shareText" readonly style="position:absolute; left:-1000px">
+        <button onclick="copyText()" style="background-color:#01A747;color:white;padding:0.5em 1em;border:none;border-radius:6px;font-weight:bold;">
             📋 Kopieer naar klembord
         </button>
-        <br><br>
-    """ % deeltekst, unsafe_allow_html=True)
+        <script>
+        function copyText() {{
+            var copyText = document.getElementById("shareText");
+            copyText.select();
+            document.execCommand("copy");
+            alert("✅ Gekopieerd naar klembord!");
+        }}
+        </script>
+    """, unsafe_allow_html=True)
 
     if st.button("🔁 Probeer opnieuw"):
         for key in ["vragenlijst", "huidige_index", "goed_geraden", "feedback_toon"]:
